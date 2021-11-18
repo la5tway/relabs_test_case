@@ -23,13 +23,16 @@ html = """
             ws.onmessage = (event) => {
                 const messages = document.getElementById('messages');
                 const message = document.createElement('li');
-                const content = document.createTextNode(event.data);
+                const data = JSON.parse(event.data)
+                const messageData = `${data.id}. ${data.message}`
+                const content = document.createTextNode(messageData);
                 message.appendChild(content);
                 messages.appendChild(message);
             };
             const sendMessage = (event) => {
                 const input = document.getElementById("messageText");
-                ws.send(input.value);
+                data = {message: input.value};
+                ws.send(JSON.stringify(data));
                 input.value = '';
                 event.preventDefault();
             };
@@ -50,10 +53,11 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     while True:
         try:
-            data = await websocket.receive_text()
+            data = await websocket.receive_json()
         except WebSocketDisconnect:
             return
-        await websocket.send_text(f"{c}. {data}")
+        data["id"] = c
+        await websocket.send_json(data)
         c += 1
 
 
